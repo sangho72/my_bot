@@ -12,6 +12,8 @@ class WebSocketManager:
     def __init__(self, data_handler: DataHandler):
         self.data_handler = data_handler
         self.ws_connections = []
+        self.coin_high = {symbol: {} for symbol in COIN_LIST}
+        self.coin_low = {symbol: {} for symbol in COIN_LIST}
         self.stop_event = threading.Event()
         
         # 계정 업데이트 웹소켓 별도 관리
@@ -61,7 +63,10 @@ class WebSocketManager:
         with self.data_handler.lock:
             self.data_handler.orderbook_data[symbol] = data
             self.data_handler.save_orderbook_data(symbol)
-
+        self.coin_low[symbol] = float(data["b"][-1][0])  # bids 리스트의 마지막 가격
+        self.coin_high[symbol]  = float(data["a"][-1][0])  # asks 리스트의 마지막 가격
+        print(self.coin_low[symbol],self.coin_high[symbol])
+        return self.coin_low , self.coin_high
     # 기존 on_message_1m/1h 캔들 처리 재현
     def _on_kline(self, ws, message, timeframe, save_to_file=True):
         data = json.loads(message)
